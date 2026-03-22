@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack)",
+      "Bash(npx --yes create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack)",
+      "Read(//private/tmp/**)",
+      "Bash(npx --yes create-next-app@latest gastos-casa-tmp --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack --no-react-compiler)",
+      "Bash(rm -rf gastos-casa-tmp)",
+      "Bash(yes \"No\")",
+      "Bash(npx --yes create-next-app@latest gastos-casa-tmp --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm)",
+      "Bash(cp -r /tmp/gastos-casa-tmp/. /Users/javierdelgado/Sites/gastos-casa/)",
+      "Bash(rm -rf /tmp/gastos-casa-tmp)",
+      "Bash(nvm ls:*)"
+    ]
+  }
+}

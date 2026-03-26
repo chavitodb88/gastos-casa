@@ -15,6 +15,13 @@
       "when": 1774204924165,
       "tag": "0001_good_glorian",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1774507177552,
+      "tag": "0002_chilly_ben_parker",
+      "breakpoints": true
     }
   ]
 }

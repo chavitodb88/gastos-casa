@@ -1,0 +1,10 @@
+node_modules
+.next
+.git
+data/*.db
+data/*.db-journal
+data/*.db-wal
+.env*
+.claude
+CLAUDE.md
+AGENTS.md

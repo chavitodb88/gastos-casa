@@ -407,7 +407,7 @@ export default function TransactionsPage() {
                 </TableCell>
                 <TableCell>
                   {tx.type === "TRANSFER" ? (
-                    <span className="text-muted-foreground text-xs">n/a</span>
+                    <Switch size="sm" checked={true} disabled />
                   ) : (
                     <Switch
                       size="sm"

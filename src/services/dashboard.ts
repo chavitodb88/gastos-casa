@@ -23,7 +23,7 @@ export function getDashboardData(month: number, year: number) {
   const totalIncome = Number(incomeResult?.total ?? 0);
   const paidIncome = Number(incomeResult?.paid ?? 0);
 
-  // Expense totals (exclude CARD_IMPORT and BANK_IMPORT, those are counted separately)
+  // Expense totals (exclude CARD_IMPORT, those are counted separately from cardTransactions table)
   const expenseResult = db
     .select({
       total: sum(transactions.amount),
@@ -35,8 +35,7 @@ export function getDashboardData(month: number, year: number) {
       and(
         like(transactions.date, datePrefix),
         eq(transactions.type, "EXPENSE"),
-        ne(transactions.source, "CARD_IMPORT"),
-        ne(transactions.source, "BANK_IMPORT")
+        ne(transactions.source, "CARD_IMPORT")
       )
     )
     .get();
@@ -64,7 +63,7 @@ export function getDashboardData(month: number, year: number) {
   // Balance
   const balance = totalIncome - totalExpenses - cardExpenses;
 
-  // Category breakdown: transactions (exclude CARD_IMPORT, BANK_IMPORT and TRANSFER)
+  // Category breakdown: transactions (exclude CARD_IMPORT and TRANSFER)
   const txByCategory = db
     .select({
       category: categories.name,
@@ -77,8 +76,7 @@ export function getDashboardData(month: number, year: number) {
       and(
         like(transactions.date, datePrefix),
         eq(transactions.type, "EXPENSE"),
-        ne(transactions.source, "CARD_IMPORT"),
-        ne(transactions.source, "BANK_IMPORT")
+        ne(transactions.source, "CARD_IMPORT")
       )
     )
     .groupBy(categories.name, categories.color)

@@ -312,10 +312,10 @@ export default function TransactionsPage() {
       {transactions.length > 0 && (() => {
         const totals = transactions.reduce(
           (acc, tx) => {
-            // Excluir CARD_IMPORT y BANK_IMPORT de gastos (ya se cuentan en tarjeta)
+            // Excluir CARD_IMPORT de gastos (se cuentan aparte en tarjeta)
             if (tx.type === "INCOME") acc.income += tx.amount;
-            else if (tx.type === "EXPENSE" && tx.source !== "CARD_IMPORT" && tx.source !== "BANK_IMPORT") acc.expense += tx.amount;
-            else if (tx.source === "CARD_IMPORT" || tx.source === "BANK_IMPORT") acc.card += tx.amount;
+            else if (tx.type === "EXPENSE" && tx.source !== "CARD_IMPORT") acc.expense += tx.amount;
+            else if (tx.source === "CARD_IMPORT") acc.card += tx.amount;
             return acc;
           },
           { income: 0, expense: 0, card: 0 }

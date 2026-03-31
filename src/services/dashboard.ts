@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { transactions, cardTransactions, categories, accounts, importBatches } from "@/db/schema";
-import { eq, and, ne, sql, like, gte, lte, sum, desc } from "drizzle-orm";
+import { eq, and, ne, sql, like, gt, gte, lte, sum, desc } from "drizzle-orm";
 
 export function getDashboardData(month: number, year: number) {
   const datePrefix = `${year}-${String(month).padStart(2, "0")}%`;
@@ -171,7 +171,9 @@ export function getDashboardData(month: number, year: number) {
   const balanceDate = allAccounts[0]?.balanceDate ?? "2099-01-01";
 
   const accountBalances = allAccounts.map((acc) => {
-    // Income for this account
+    const accBalanceDate = acc.balanceDate ?? "2099-01-01";
+
+    // Income for this account (after balanceDate - that day is already in initialBalance)
     const paidIncome = db
       .select({ total: sum(transactions.amount) })
       .from(transactions)
@@ -180,7 +182,7 @@ export function getDashboardData(month: number, year: number) {
           eq(transactions.accountId, acc.id),
           eq(transactions.type, "INCOME"),
           eq(transactions.isPaid, true),
-          gte(transactions.date, balanceDate)
+          gt(transactions.date, accBalanceDate)
         )
       )
       .get();
@@ -194,7 +196,7 @@ export function getDashboardData(month: number, year: number) {
           eq(transactions.accountId, acc.id),
           eq(transactions.type, "EXPENSE"),
           eq(transactions.isPaid, true),
-          gte(transactions.date, balanceDate)
+          gt(transactions.date, accBalanceDate)
         )
       )
       .get();
@@ -207,7 +209,7 @@ export function getDashboardData(month: number, year: number) {
         and(
           eq(transactions.accountId, acc.id),
           eq(transactions.type, "TRANSFER"),
-          gte(transactions.date, balanceDate)
+          gt(transactions.date, accBalanceDate)
         )
       )
       .get();
@@ -220,7 +222,7 @@ export function getDashboardData(month: number, year: number) {
         and(
           eq(transactions.toAccountId, acc.id),
           eq(transactions.type, "TRANSFER"),
-          gte(transactions.date, balanceDate)
+          gt(transactions.date, accBalanceDate)
         )
       )
       .get();

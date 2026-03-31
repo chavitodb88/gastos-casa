@@ -35,6 +35,8 @@ export const accountSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Color hex inválido").nullable().optional(),
   icon: z.string().nullable().optional(),
   isDefault: z.boolean().default(false),
+  initialBalance: z.number().default(0),
+  balanceDate: z.string().nullable().optional(),
 });
 
 export const merchantMappingSchema = z.object({

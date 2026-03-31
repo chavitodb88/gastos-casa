@@ -82,6 +82,7 @@ export function importCardTransactions(
         month: item.month,
         year: item.year,
         categoryId: item.suggestedCategoryId,
+        accountId: 2,
         importBatchId: batchId,
       })
       .returning()

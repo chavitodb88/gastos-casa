@@ -60,6 +60,7 @@ export function getTransactions(filters: TransactionFilters = {}) {
       isFixed: transactions.isFixed,
       categoryId: transactions.categoryId,
       accountId: transactions.accountId,
+      toAccountId: transactions.toAccountId,
       source: transactions.source,
       cardTransactionId: transactions.cardTransactionId,
       createdAt: transactions.createdAt,
@@ -94,6 +95,7 @@ export function getTransactionById(id: number) {
       isFixed: transactions.isFixed,
       categoryId: transactions.categoryId,
       accountId: transactions.accountId,
+      toAccountId: transactions.toAccountId,
       source: transactions.source,
       cardTransactionId: transactions.cardTransactionId,
       createdAt: transactions.createdAt,
@@ -123,6 +125,7 @@ export function createTransaction(data: TransactionInput) {
       isFixed: data.isFixed,
       categoryId: data.categoryId ?? null,
       accountId: data.accountId ?? null,
+      toAccountId: data.toAccountId ?? null,
     })
     .returning()
     .get();
@@ -136,6 +139,7 @@ export function updateTransaction(id: number, data: Partial<TransactionInput>) {
       notes: data.notes ?? undefined,
       categoryId: data.categoryId ?? undefined,
       accountId: data.accountId ?? undefined,
+      toAccountId: data.toAccountId ?? undefined,
     })
     .where(eq(transactions.id, id))
     .returning()

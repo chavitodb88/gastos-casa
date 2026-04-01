@@ -227,12 +227,31 @@ export function getDashboardData(month: number, year: number) {
       )
       .get();
 
+    // Card expenses charged to this account's linked card
+    // The bank settles card expenses from the default (main) account monthly
+    // We need to deduct them from the main account balance automatically
+    let cardExpensesForAccount = 0;
+    if (acc.isDefault) {
+      const cardResult = db
+        .select({ total: sum(cardTransactions.amount) })
+        .from(cardTransactions)
+        .where(
+          gt(
+            sql`${cardTransactions.year} || '-' || printf('%02d', ${cardTransactions.month}) || '-01'`,
+            accBalanceDate
+          )
+        )
+        .get();
+      cardExpensesForAccount = Number(cardResult?.total ?? 0);
+    }
+
     const currentBalance =
       acc.initialBalance +
       Number(paidIncome?.total ?? 0) -
       Number(paidExpense?.total ?? 0) -
       Number(transfersOut?.total ?? 0) +
-      Number(transfersIn?.total ?? 0);
+      Number(transfersIn?.total ?? 0) -
+      cardExpensesForAccount;
 
     return {
       id: acc.id,

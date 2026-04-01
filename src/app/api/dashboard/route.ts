@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { getDashboardData } from "@/services/dashboard";
-import { db } from "@/db";
-import { importBatches } from "@/db/schema";
 
 export async function GET(request: Request) {
   try {
@@ -15,11 +13,8 @@ export async function GET(request: Request) {
       ? Number(searchParams.get("year"))
       : now.getFullYear();
 
-    // Debug: include import batches data
-    const batches = db.select().from(importBatches).all();
-
     const data = await getDashboardData(month, year);
-    return NextResponse.json({ ...data, _debug_batches: batches });
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
     return NextResponse.json(

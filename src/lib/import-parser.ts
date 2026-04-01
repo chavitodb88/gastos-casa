@@ -14,7 +14,14 @@ export interface ParsedCardTransaction {
   isDuplicate: boolean;
 }
 
-export function parseExcelBuffer(buffer: Buffer, filename: string): ParsedCardTransaction[] {
+export interface ParseResult {
+  transactions: ParsedCardTransaction[];
+  totalAmount: number;
+  billingMonth: number;
+  billingYear: number;
+}
+
+export function parseExcelBuffer(buffer: Buffer, filename: string): ParseResult {
   const workbook = XLSX.read(buffer, { type: "buffer" });
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
@@ -36,7 +43,8 @@ export function parseExcelBuffer(buffer: Buffer, filename: string): ParsedCardTr
 
   if (headerIdx === -1) {
     // Fallback: try sheet_to_json with default headers
-    return parseGenericFormat(sheet, filename);
+    const fallback = parseGenericFormat(sheet, filename);
+    return buildResult(fallback);
   }
 
   const mappings = db.select().from(merchantMappings).all();
@@ -87,7 +95,29 @@ export function parseExcelBuffer(buffer: Buffer, filename: string): ParsedCardTr
     });
   }
 
-  return results;
+  return buildResult(results);
+}
+
+function buildResult(transactions: ParsedCardTransaction[]): ParseResult {
+  const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+  // Billing month = most common month in transactions
+  const monthCounts = new Map<string, number>();
+  for (const t of transactions) {
+    const key = `${t.year}-${t.month}`;
+    monthCounts.set(key, (monthCounts.get(key) ?? 0) + 1);
+  }
+  let billingMonth = new Date().getMonth() + 1;
+  let billingYear = new Date().getFullYear();
+  let maxCount = 0;
+  for (const [key, count] of monthCounts) {
+    if (count > maxCount) {
+      maxCount = count;
+      const [y, m] = key.split("-").map(Number);
+      billingYear = y;
+      billingMonth = m;
+    }
+  }
+  return { transactions, totalAmount: Math.round(totalAmount * 100) / 100, billingMonth, billingYear };
 }
 
 function parseGenericFormat(sheet: XLSX.Sheet, filename: string): ParsedCardTransaction[] {

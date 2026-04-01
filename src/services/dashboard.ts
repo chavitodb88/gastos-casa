@@ -227,29 +227,30 @@ export function getDashboardData(month: number, year: number) {
       )
       .get();
 
-    // Card expenses: the bank settles on the 1st of each month for the previous month.
-    // Only deduct card expenses from months already settled (before the current month).
+    // Card settlement: the bank charges the main account on the 1st of each month
+    // for the previous month's card expenses. Use the actual settlement amounts
+    // stored when card transactions were imported, only for months already settled.
     let cardSettled = 0;
     if (acc.isDefault) {
       const now = new Date();
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
-      // Settled months: any month where settlement date (1st of next month) is after balanceDate
-      // AND the month is before the current month (settlement has already happened)
-      const cardResult = db
-        .select({ total: sum(cardTransactions.amount) })
-        .from(cardTransactions)
+
+      const settledResult = db
+        .select({ total: sum(importBatches.settlementAmount) })
+        .from(importBatches)
         .where(
           and(
+            sql`${importBatches.settlementAmount} IS NOT NULL`,
             gt(
-              sql`${cardTransactions.year} || '-' || printf('%02d', ${cardTransactions.month}) || '-01'`,
+              sql`${importBatches.billingYear} || '-' || printf('%02d', ${importBatches.billingMonth}) || '-01'`,
               accBalanceDate
             ),
-            sql`(${cardTransactions.year} < ${currentYear} OR (${cardTransactions.year} = ${currentYear} AND ${cardTransactions.month} < ${currentMonth}))`
+            sql`(${importBatches.billingYear} < ${currentYear} OR (${importBatches.billingYear} = ${currentYear} AND ${importBatches.billingMonth} < ${currentMonth}))`
           )
         )
         .get();
-      cardSettled = Number(cardResult?.total ?? 0);
+      cardSettled = Number(settledResult?.total ?? 0);
     }
 
     const currentBalance =

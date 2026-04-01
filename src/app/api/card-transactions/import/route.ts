@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const parsed = parseExcelBuffer(buffer, file.name);
+    const { transactions: parsed, totalAmount, billingMonth, billingYear } = parseExcelBuffer(buffer, file.name);
 
     // Detect duplicates by date + merchant + amount
     const dupeIndices = findDuplicates(parsed);
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     });
 
     if (action === "preview") {
-      return NextResponse.json({ rows: parsed });
+      return NextResponse.json({ rows: parsed, totalAmount, billingMonth, billingYear });
     }
 
     if (action === "confirm") {
@@ -67,6 +67,9 @@ export async function POST(request: Request) {
           filename: file.name,
           rowCount: parsed.length,
           duplicatesSkipped: dupeIndices.size,
+          settlementAmount: totalAmount,
+          billingMonth,
+          billingYear,
         })
         .returning()
         .get();
@@ -77,6 +80,9 @@ export async function POST(request: Request) {
         batchId: batch.id,
         imported: result.imported,
         duplicatesSkipped: dupeIndices.size + result.skipped,
+        settlementAmount: totalAmount,
+        billingMonth,
+        billingYear,
       }, { status: 201 });
     }
 

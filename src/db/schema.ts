@@ -111,6 +111,9 @@ export const importBatches = sqliteTable("import_batches", {
   filename: text("filename"),
   rowCount: integer("row_count"),
   duplicatesSkipped: integer("duplicates_skipped"),
+  settlementAmount: real("settlement_amount"),
+  billingMonth: integer("billing_month"),
+  billingYear: integer("billing_year"),
   importedAt: text("imported_at")
     .notNull()
     .default(sql`(datetime('now'))`),

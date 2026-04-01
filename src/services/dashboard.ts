@@ -227,22 +227,29 @@ export function getDashboardData(month: number, year: number) {
       )
       .get();
 
-    // Card expenses charged to this account's linked card
-    // The bank settles card expenses from the default (main) account monthly
-    // We need to deduct them from the main account balance automatically
-    let cardExpensesForAccount = 0;
+    // Card expenses: the bank settles on the 1st of each month for the previous month.
+    // Only deduct card expenses from months already settled (before the current month).
+    let cardSettled = 0;
     if (acc.isDefault) {
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      // Settled months: any month where settlement date (1st of next month) is after balanceDate
+      // AND the month is before the current month (settlement has already happened)
       const cardResult = db
         .select({ total: sum(cardTransactions.amount) })
         .from(cardTransactions)
         .where(
-          gt(
-            sql`${cardTransactions.year} || '-' || printf('%02d', ${cardTransactions.month}) || '-01'`,
-            accBalanceDate
+          and(
+            gt(
+              sql`${cardTransactions.year} || '-' || printf('%02d', ${cardTransactions.month}) || '-01'`,
+              accBalanceDate
+            ),
+            sql`(${cardTransactions.year} < ${currentYear} OR (${cardTransactions.year} = ${currentYear} AND ${cardTransactions.month} < ${currentMonth}))`
           )
         )
         .get();
-      cardExpensesForAccount = Number(cardResult?.total ?? 0);
+      cardSettled = Number(cardResult?.total ?? 0);
     }
 
     const currentBalance =
@@ -251,7 +258,7 @@ export function getDashboardData(month: number, year: number) {
       Number(paidExpense?.total ?? 0) -
       Number(transfersOut?.total ?? 0) +
       Number(transfersIn?.total ?? 0) -
-      cardExpensesForAccount;
+      cardSettled;
 
     return {
       id: acc.id,

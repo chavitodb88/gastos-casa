@@ -243,7 +243,11 @@ export function getDashboardData(month: number, year: number) {
           and(
             sql`${importBatches.settlementAmount} IS NOT NULL`,
             gt(
-              sql`${importBatches.billingYear} || '-' || printf('%02d', ${importBatches.billingMonth}) || '-01'`,
+              sql`CASE
+                WHEN ${importBatches.billingMonth} = 12
+                THEN (${importBatches.billingYear} + 1) || '-01-01'
+                ELSE ${importBatches.billingYear} || '-' || printf('%02d', ${importBatches.billingMonth} + 1) || '-01'
+              END`,
               accBalanceDate
             ),
             sql`(${importBatches.billingYear} < ${currentYear} OR (${importBatches.billingYear} = ${currentYear} AND ${importBatches.billingMonth} < ${currentMonth}))`

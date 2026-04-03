@@ -138,6 +138,7 @@ export default function BankImportPage() {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("accountId", selectedAccountId);
+    formData.append("ignoredUids", JSON.stringify([...ignoredUids]));
 
     try {
       const res = await fetch("/api/bank-import?action=confirm", {

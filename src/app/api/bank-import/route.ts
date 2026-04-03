@@ -45,16 +45,21 @@ export async function POST(request: Request) {
     }
 
     if (action === "confirm") {
+      const ignoredUidsRaw = formData.get("ignoredUids");
+      const ignoredUids: Set<string> = new Set(
+        ignoredUidsRaw ? JSON.parse(ignoredUidsRaw as string) : []
+      );
+
       let imported = 0;
       let matched = 0;
       let duplicatesSkipped = 0;
-      let autoIgnored = 0;
+      let userIgnored = 0;
 
       for (let i = 0; i < rowsWithStatus.length; i++) {
         const item = rowsWithStatus[i];
 
         if (item.isDuplicate) { duplicatesSkipped++; continue; }
-        if (item.isAutoIgnored) { autoIgnored++; continue; }
+        if (ignoredUids.has(item.uid)) { userIgnored++; continue; }
 
         if (item.matchedTransactionId) {
           // Mark existing transaction as paid and update amount if needed
@@ -103,7 +108,7 @@ export async function POST(request: Request) {
           imported,
           matched,
           duplicatesSkipped,
-          autoIgnored,
+          autoIgnored: userIgnored,
         },
         { status: 201 }
       );

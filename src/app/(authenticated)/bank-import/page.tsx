@@ -58,6 +58,7 @@ export default function BankImportPage() {
   const [step, setStep] = useState<Step>("upload");
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("none");
+  const [cashAccountId, setCashAccountId] = useState<string>("none");
   const [file, setFile] = useState<File | null>(null);
   const [previewRows, setPreviewRows] = useState<PreviewRow[]>([]);
   const [ignoredUids, setIgnoredUids] = useState<Set<string>>(new Set());
@@ -69,7 +70,14 @@ export default function BankImportPage() {
   useEffect(() => {
     fetch("/api/accounts")
       .then((res) => res.json())
-      .then(setAccounts)
+      .then((data: Account[]) => {
+        setAccounts(data);
+        // Default cash account to one named "Efectivo" if present
+        const efectivo = data.find(
+          (a) => a.name.trim().toLowerCase() === "efectivo"
+        );
+        if (efectivo) setCashAccountId(efectivo.id.toString());
+      })
       .catch(console.error);
   }, []);
 
@@ -133,11 +141,25 @@ export default function BankImportPage() {
 
   const handleConfirm = async () => {
     if (!file) return;
+
+    // If there are transfer rows to import, require a cash account
+    const hasTransfersToImport = previewRows.some(
+      (r) =>
+        r.type === "TRANSFER" && !r.isDuplicate && !ignoredUids.has(r.uid)
+    );
+    if (hasTransfersToImport && cashAccountId === "none") {
+      toast.error(
+        "Selecciona la cuenta de efectivo para las retiradas de cajero"
+      );
+      return;
+    }
+
     setLoading(true);
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("accountId", selectedAccountId);
+    formData.append("cashAccountId", cashAccountId);
     formData.append("ignoredUids", JSON.stringify([...ignoredUids]));
 
     try {
@@ -186,9 +208,15 @@ export default function BankImportPage() {
   const importableCount = previewRows.filter(
     (r) => !r.isDuplicate && !ignoredUids.has(r.uid)
   ).length;
+  const transferCount = previewRows.filter(
+    (r) => r.type === "TRANSFER" && !r.isDuplicate && !ignoredUids.has(r.uid)
+  ).length;
 
   const selectedAccount = accounts.find(
     (a) => a.id.toString() === selectedAccountId
+  );
+  const selectedCashAccount = accounts.find(
+    (a) => a.id.toString() === cashAccountId
   );
 
   return (
@@ -340,6 +368,57 @@ export default function BankImportPage() {
             </div>
           </div>
 
+          {transferCount > 0 && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">
+                    Cuenta de efectivo (destino de las retiradas de cajero)
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    Se han detectado {transferCount} retirada
+                    {transferCount > 1 ? "s" : ""} de cajero (CAJ.). Se
+                    importarán como transferencias desde {selectedAccount?.name}
+                    {" "}a la cuenta seleccionada.
+                  </p>
+                  <Select
+                    value={cashAccountId}
+                    onValueChange={(val) => setCashAccountId(val ?? "none")}
+                  >
+                    <SelectTrigger className="w-full max-w-md">
+                      <SelectValue placeholder="Selecciona una cuenta" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none" disabled>
+                        Selecciona una cuenta
+                      </SelectItem>
+                      {accounts
+                        .filter(
+                          (a) => a.id.toString() !== selectedAccountId
+                        )
+                        .map((acc) => (
+                          <SelectItem key={acc.id} value={acc.id.toString()}>
+                            <span className="flex items-center gap-2">
+                              {acc.color && (
+                                <span
+                                  className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+                                  style={{ backgroundColor: acc.color }}
+                                />
+                              )}
+                              {acc.name}
+                              <span className="text-muted-foreground text-xs">
+                                ({acc.bank})
+                              </span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Table>
             <TableHeader>
               <TableRow>
@@ -386,7 +465,7 @@ export default function BankImportPage() {
                           ? "text-green-600"
                           : row.type === "EXPENSE"
                             ? "text-red-600"
-                            : ""
+                            : "text-blue-600"
                       }`}
                     >
                       {row.type === "INCOME" ? "+" : "-"}
@@ -406,7 +485,7 @@ export default function BankImportPage() {
                           ? "Ingreso"
                           : row.type === "EXPENSE"
                             ? "Gasto"
-                            : "Transferencia"}
+                            : `→ ${selectedCashAccount?.name ?? "Efectivo"}`}
                       </Badge>
                     </TableCell>
                     <TableCell>

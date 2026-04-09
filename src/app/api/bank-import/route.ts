@@ -14,6 +14,11 @@ export async function POST(request: Request) {
     const accountId = formData.get("accountId")
       ? Number(formData.get("accountId"))
       : null;
+    const cashAccountIdRaw = formData.get("cashAccountId");
+    const cashAccountId =
+      cashAccountIdRaw && cashAccountIdRaw !== "none"
+        ? Number(cashAccountIdRaw)
+        : null;
 
     if (!file) {
       return NextResponse.json(
@@ -50,6 +55,21 @@ export async function POST(request: Request) {
         ignoredUidsRaw ? JSON.parse(ignoredUidsRaw as string) : []
       );
 
+      // If there are transfer rows (cash withdrawals) to import, cashAccountId is required
+      const hasTransfersToImport = rowsWithStatus.some(
+        (r) =>
+          r.type === "TRANSFER" && !r.isDuplicate && !ignoredUids.has(r.uid)
+      );
+      if (hasTransfersToImport && cashAccountId == null) {
+        return NextResponse.json(
+          {
+            error:
+              "Hay retiradas de efectivo en el archivo. Selecciona la cuenta de efectivo de destino o ignóralas.",
+          },
+          { status: 400 }
+        );
+      }
+
       let imported = 0;
       let matched = 0;
       let duplicatesSkipped = 0;
@@ -84,6 +104,7 @@ export async function POST(request: Request) {
               isFixed: false,
               categoryId: null,
               accountId: accountId,
+              toAccountId: item.type === "TRANSFER" ? cashAccountId : null,
               source: "BANK_IMPORT",
               notes: `bank_uid:${item.uid}`,
             })

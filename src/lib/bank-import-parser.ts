@@ -27,6 +27,12 @@ const AUTO_IGNORE_RULES: AutoIgnoreRule[] = [
   },
 ];
 
+// Cash withdrawal: description starts with "CAJ." or "CAJ " (but not "CAJA")
+// Examples: "CAJ.SERVIRE05/04/6 K0405140427", "CAJ. 14.33         C030202KE27"
+function isCashWithdrawal(description: string): boolean {
+  return /^CAJ[\. ]/i.test(description.trim());
+}
+
 export function parseBankExcelBuffer(
   buffer: Buffer,
   filename: string
@@ -90,7 +96,11 @@ export function parseBankExcelBuffer(
     const amount = parseAmount(row[colMap.amount]);
     if (amount === 0) continue;
 
-    const type = amount > 0 ? "INCOME" : "EXPENSE";
+    let type: "INCOME" | "EXPENSE" | "TRANSFER" =
+      amount > 0 ? "INCOME" : "EXPENSE";
+    if (type === "EXPENSE" && isCashWithdrawal(description)) {
+      type = "TRANSFER";
+    }
     const absAmount = Math.abs(amount);
 
     const uid = generateUID(dateStr, description, amount);

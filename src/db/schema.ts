@@ -106,6 +106,31 @@ export const merchantMappings = sqliteTable("merchant_mappings", {
   ...timestamps,
 });
 
+export const debts = sqliteTable(
+  "debts",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    type: text("type", { enum: ["RECEIVABLE", "PAYABLE"] }).notNull(),
+    personName: text("person_name").notNull(),
+    description: text("description").notNull(),
+    amount: real("amount").notNull(),
+    date: text("date").notNull(),
+    dueDate: text("due_date"),
+    status: text("status", { enum: ["PENDING", "SETTLED"] })
+      .notNull()
+      .default("PENDING"),
+    settledAt: text("settled_at"),
+    transactionId: integer("transaction_id").references(() => transactions.id),
+    notes: text("notes"),
+    ...timestamps,
+  },
+  (table) => [
+    index("idx_debts_status").on(table.status),
+    index("idx_debts_type").on(table.type),
+    index("idx_debts_person").on(table.personName),
+  ]
+);
+
 export const importBatches = sqliteTable("import_batches", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   filename: text("filename"),

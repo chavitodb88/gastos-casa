@@ -44,8 +44,26 @@ export const merchantMappingSchema = z.object({
   categoryId: z.number().int().positive("La categoría es obligatoria"),
 });
 
+export const debtSchema = z.object({
+  type: z.enum(["RECEIVABLE", "PAYABLE"]),
+  personName: z.string().min(1, "El nombre es obligatorio"),
+  description: z.string().min(1, "La descripción es obligatoria"),
+  amount: z.number().positive("El importe debe ser positivo"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido"),
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido").nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+export const settleDebtSchema = z.object({
+  accountId: z.number().int().positive("La cuenta es obligatoria"),
+  categoryId: z.number().int().positive().nullable().optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido"),
+});
+
 export type CategoryInput = z.infer<typeof categorySchema>;
 export type TransactionInput = z.infer<typeof transactionSchema>;
 export type FixedTemplateInput = z.infer<typeof fixedTemplateSchema>;
 export type AccountInput = z.infer<typeof accountSchema>;
 export type MerchantMappingInput = z.infer<typeof merchantMappingSchema>;
+export type DebtInput = z.infer<typeof debtSchema>;
+export type SettleDebtInput = z.infer<typeof settleDebtSchema>;
